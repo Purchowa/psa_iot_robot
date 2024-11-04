@@ -2,37 +2,30 @@
 
 #include <ArduinoJson.h>
 
-SocketIOclient g_socketIOClient{};
+WebSocketsClient g_webSocketClient{};
 
-void onEventCallback(socketIOmessageType_t type, uint8_t * payload, size_t length)
+void onEventCallback(WStype_t type, uint8_t *payload, size_t length)
 {
    switch(type) {
-        case sIOtype_DISCONNECT:
-            Serial.printf("[IOc] Disconnected!\n");
-            break;
-        case sIOtype_CONNECT:
-            Serial.printf("[IOc] Connected to url: %s\n", payload);
-            // join default namespace (no auto join in Socket.IO V3)
-            // g_socketIOClient.send(sIOtype_CONNECT, "/");
-      
-            break;
-        case sIOtype_EVENT:
-            Serial.printf("[IOc] get event: %s\n", payload);
-            break;
-        case sIOtype_ACK:
-            Serial.printf("[IOc] get ack: %u\n", length);
-            break;
-        case sIOtype_ERROR:
-            Serial.printf("[IOc] get error: %u\n", length);
-            break;
-        case sIOtype_BINARY_EVENT:
-            Serial.printf("[IOc] get binary: %u\n", length);
-            break;
-        case sIOtype_BINARY_ACK:
-            Serial.printf("[IOc] get binary ack: %u\n", length);
-            break;
-          default:
-            Serial.printf("[IOc] unknown: %s\n", payload);
+   case WStype_DISCONNECTED:
+     Serial.printf("[WSc] Disconnected!\n");
+     break;
+   case WStype_CONNECTED:
+     Serial.printf("[WSc] Connected to url: %s\n", payload);
+     g_webSocketClient.sendTXT("Connected");
+     break;
+   case WStype_TEXT:
+     Serial.printf("[WSc] get text: %s\n", payload);
+     break;
+   case WStype_BIN:
+     Serial.printf("[WSc] get binary length: %u\n", length);
+     break;
+   case WStype_ERROR:
+   case WStype_FRAGMENT_TEXT_START:
+   case WStype_FRAGMENT_BIN_START:
+   case WStype_FRAGMENT:
+   case WStype_FRAGMENT_FIN:
+     break;
     }
 }
 
@@ -63,16 +56,15 @@ namespace ToF
   {
   }
 
-  void WebSocketApi::connectAndListen()
-  {
-    m_webSocket.onEvent(WebSocketApi::onStateCallback);
+  // void WebSocketApi::connectAndListen()
+  // {
+  //   m_webSocket.onEvent(WebSocketApi::onStateCallback);
 
-    m_webSocket.beginSSL(m_hostName, sslPort, m_customUrl + "/?EIO=3");
-  }
+  //   m_webSocket.beginSSL(m_hostName, sslPort, m_customUrl + "/?EIO=3");
+  // }
 
-  void WebSocketApi::onStateCallback(socketIOmessageType_t type, uint8_t * payload, size_t length)
-  {
-    Serial.printf("%s\n", payload);
-  }
-  
+  // void WebSocketApi::onStateCallback(socketIOmessageType_t type, uint8_t * payload, size_t length)
+  // {
+  //   Serial.printf("%s\n", payload);
+  // }
 }

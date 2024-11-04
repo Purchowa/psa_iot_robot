@@ -2,11 +2,11 @@
 
 #include "Arduino.h"
 
-#include <SocketIOclient.h>
+#include <WebSocketsClient.h>
 
-extern SocketIOclient g_socketIOClient;
+extern WebSocketsClient g_webSocketClient;
 
-void onEventCallback(socketIOmessageType_t type, uint8_t * payload, size_t length);
+void onEventCallback(WStype_t type, uint8_t *payload, size_t length);
 String prepareEvent(String eventName);
 
 namespace ToF
@@ -16,13 +16,13 @@ namespace ToF
   {
     public:
       WebSocketApi(const char* hostName, const char* url);
-      void connectAndListen();
+      // void connectAndListen();
       void emitToFCameraData();
 
     private:
-      static void onStateCallback(socketIOmessageType_t type, uint8_t * payload, size_t length);
+      // static void onStateCallback(socketIOmessageType_t type, uint8_t * payload, size_t length);
 
-      SocketIOclient m_webSocket{};
+      WebSocketsClient m_webSocket{};
 
       String m_hostName;
       String m_customUrl;

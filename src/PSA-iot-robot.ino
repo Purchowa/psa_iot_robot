@@ -1,7 +1,5 @@
 #include <WiFi.h>
 
-#include <SocketIOclient.h>
-
 #include "EnvironmentSensorsAPI.hpp"
 #include "EnvironmentSensorsReader.hpp"
 #include "ToFProvider.hpp"
@@ -21,7 +19,7 @@ ToF::ImageProvider tofImage{};
 
 constexpr delay_ms delaySecond{1000};
 
-constexpr delay_ms tofSensorInterval{delaySecond};
+constexpr delay_ms tofSensorInterval{100};
 constexpr delay_ms httpRequestInterval{10 * delaySecond};
 
 static_assert(tofSensorInterval <= httpRequestInterval, "ToF getting interval better be smaller!");
@@ -40,27 +38,27 @@ void setup()
   }
   delay(delaySecond);
 
-  try
-  {
-    tofImage.init();
-  }
-  catch (const std::runtime_error &exception)
-  {
-    Serial.println(exception.what());
-    while (true)
-      ;
-  }
+  // try
+  // {
+  //   tofImage.init();
+  // }
+  // catch (const std::runtime_error &exception)
+  // {
+  //   Serial.println(exception.what());
+  //   while (true)
+  //     ;
+  // }
 
-  g_socketIOClient.onEvent(onEventCallback);
-  g_socketIOClient.beginSSL("at-waterscreen.ddnsking.com", 443, "/api/socket.io/?EIO=4");
+  g_webSocketClient.beginSSL("echo.websocket.org", 443);
+  g_webSocketClient.onEvent(onEventCallback);
 }
 
 uint32_t callCounter{0};
 
 void loop()
 {
-  g_socketIOClient.loop();
-
+  g_webSocketClient.loop();
+  g_webSocketClient.sendTXT("Hello");
   /*
     if (tofImage.pollData())
     {
@@ -78,10 +76,9 @@ void loop()
 
   // Serial.printf("[SocketIO] isConnected: %d\n", g_socketIOClient.isConnected());
 
-  String event = prepareEvent("getState");
+  // String event = prepareEvent("getState");
   // Serial.printf("[SocketIO] Sending event: %s\n", event);
 
-  g_socketIOClient.sendEVENT(event);
   if (httpRequestInterval / tofSensorInterval <= callCounter++)
   {
     // socketIOClient.disconnect();
