@@ -6,7 +6,6 @@ namespace Environment
 SensorsAPI::SensorsAPI(String postURI) : m_postURI(std::move(postURI))
 {
   m_client.setInsecure();
-  m_https.setReuse(false);
 }
 
 int SensorsAPI::postData(const Data& data)

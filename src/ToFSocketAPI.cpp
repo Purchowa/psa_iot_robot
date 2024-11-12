@@ -2,8 +2,6 @@
 
 #include <ArduinoJson.h>
 
-WebSocketsClient g_webSocketClient{};
-
 void onEventCallback(WStype_t type, uint8_t *payload, size_t length)
 {
    switch(type) {
@@ -12,7 +10,6 @@ void onEventCallback(WStype_t type, uint8_t *payload, size_t length)
      break;
    case WStype_CONNECTED:
      Serial.printf("[WSc] Connected to url: %s\n", payload);
-     g_webSocketClient.sendTXT("Connected");
      break;
    case WStype_TEXT:
      Serial.printf("[WSc] get text: %s\n", payload);
@@ -27,22 +24,6 @@ void onEventCallback(WStype_t type, uint8_t *payload, size_t length)
    case WStype_FRAGMENT_FIN:
      break;
     }
-}
-
-String prepareEvent(String eventName)
-{
-  DynamicJsonDocument doc(1024);
-  JsonArray array = doc.to<JsonArray>();
-
-  // add evnet name
-  // Hint: socket.on('event_name', ....
-  array.add(eventName);
-
-  // JSON to String (serializion)
-  String output;
-  serializeJson(doc, output);
-
-  return output;
 }
 
 namespace ToF

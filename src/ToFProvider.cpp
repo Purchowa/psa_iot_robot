@@ -3,6 +3,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <sstream>
 
 namespace ToF
 {
@@ -50,5 +51,16 @@ namespace ToF
   tcb::span<const int16_t> ImageProvider::getDistanceData()
   {
     return m_measurementData.distance_mm;
+  }
+
+  std::string ImageProvider::serializeDistanceData()
+  {
+    std::ostringstream oss;
+    for (const auto distance : m_measurementData.distance_mm)
+    {
+      oss << distance << " ";
+    }
+
+    return oss.str();
   }
 }

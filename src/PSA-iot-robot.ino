@@ -1,5 +1,7 @@
 #include <WiFi.h>
 
+#include "Config.hpp"
+
 #include "EnvironmentSensorsAPI.hpp"
 #include "EnvironmentSensorsReader.hpp"
 #include "ToFProvider.hpp"
@@ -7,20 +9,14 @@
 
 using delay_ms = uint32_t;
 
-const char *ssid{"TP-LINK-BLACK"};
-const char *password{"smart56."};
-
-const char *imageWebSocketURI{};
-
-Environment::SensorsAPI sensorsApi{"https://api.thingspeak.com/update?api_key=5EVBAPDR1QWR5DCJ"};
-
-// ToF::WebSocketApi tofApi{"at-waterscreen.ddnsking.com", "/api/socket.io"}; // TODO: add hostname
-ToF::ImageProvider tofImage{};
+Environment::SensorsAPI sensorsApi{Cfg::Api::thingspeakUrl};
+ToF::ImageProvider tofImage;
+WebSocketsClient webSocketClient;
 
 constexpr delay_ms delaySecond{1000};
 
-constexpr delay_ms tofSensorInterval{100};
-constexpr delay_ms httpRequestInterval{10 * delaySecond};
+constexpr delay_ms tofSensorInterval{32};
+constexpr delay_ms httpRequestInterval{delaySecond};
 
 static_assert(tofSensorInterval <= httpRequestInterval, "ToF getting interval better be smaller!");
 
@@ -29,7 +25,7 @@ void setup()
   Serial.begin(115200);
   delay(delaySecond);
 
-  WiFi.begin(ssid, password);
+  WiFi.begin(Cfg::WiFi::ssid, Cfg::WiFi::password);
 
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -38,53 +34,37 @@ void setup()
   }
   delay(delaySecond);
 
-  // try
-  // {
-  //   tofImage.init();
-  // }
-  // catch (const std::runtime_error &exception)
-  // {
-  //   Serial.println(exception.what());
-  //   while (true)
-  //     ;
-  // }
+  try
+  {
+    tofImage.init();
+  }
+  catch (const std::runtime_error &exception)
+  {
+    Serial.println(exception.what());
+    while (true)
+      ;
+  }
 
-  g_webSocketClient.beginSSL("echo.websocket.org", 443);
-  g_webSocketClient.onEvent(onEventCallback);
+  webSocketClient.beginSSL(Cfg::Api::webSocketHostName, Cfg::Api::webSocketPort, Cfg::Api::webSocketUrl);
+  webSocketClient.onEvent(onEventCallback);
 }
 
 uint32_t callCounter{0};
 
 void loop()
 {
-  g_webSocketClient.loop();
-  g_webSocketClient.sendTXT("Hello");
-  /*
-    if (tofImage.pollData())
-    {
-
-
-      for (const auto distance : tofImage.getDistanceData())
-      {
-        Serial.print(distance);
-        Serial.print(' ');
-      }
-      Serial.print('\n');
-
-    }
-     */
-
-  // Serial.printf("[SocketIO] isConnected: %d\n", g_socketIOClient.isConnected());
-
-  // String event = prepareEvent("getState");
-  // Serial.printf("[SocketIO] Sending event: %s\n", event);
+  webSocketClient.loop();
 
   if (httpRequestInterval / tofSensorInterval <= callCounter++)
   {
-    // socketIOClient.disconnect();
-    // const auto httpCode = sensorsApi.postData(Environment::readData());
-    // Serial.printf("[HTTPS] Post sensor data, code: %d\n", httpCode);
+    const auto httpCode = sensorsApi.postData(Environment::readData());
+    Serial.printf("[HTTPS] Post sensor data, code: %d\n", httpCode);
     callCounter = 0;
+  }
+
+  if (tofImage.pollData())
+  {
+    webSocketClient.sendTXT(tofImage.serializeDistanceData().c_str());
   }
 
   delay(tofSensorInterval);

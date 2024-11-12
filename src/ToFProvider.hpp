@@ -13,6 +13,7 @@ namespace ToF
       bool pollData();
 
       tcb::span<const int16_t> getDistanceData();
+      std::string serializeDistanceData();
 
     private:
       SparkFun_VL53L5CX m_imager{};

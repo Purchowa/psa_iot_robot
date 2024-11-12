@@ -4,14 +4,10 @@
 
 #include <WebSocketsClient.h>
 
-extern WebSocketsClient g_webSocketClient;
-
 void onEventCallback(WStype_t type, uint8_t *payload, size_t length);
-String prepareEvent(String eventName);
 
 namespace ToF
 {
-
   class WebSocketApi
   {
     public:
