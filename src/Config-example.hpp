@@ -11,7 +11,6 @@ namespace Cfg
 
     namespace Api
     {
-        inline constexpr auto thingspeakUrl{""}; // Temporary
         inline constexpr auto webSocketHostName{""};
         inline constexpr auto webSocketUrl{""};
         inline constexpr uint16_t webSocketPort{443};

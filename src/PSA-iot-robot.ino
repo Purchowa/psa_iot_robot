@@ -2,14 +2,14 @@
 
 #include "Config.hpp"
 
-#include "EnvironmentSensorsAPI.hpp"
 #include "EnvironmentSensorsReader.hpp"
 #include "ToFProvider.hpp"
 #include "WebSocketReceiver.hpp"
+#include "DataSerializer.hpp"
+#include "PacketBuilder.hpp"
 
 using delay_ms = uint32_t;
 
-Environment::SensorsAPI sensorsApi{Cfg::Api::thingspeakUrl};
 ToF::ImageProvider tofImage;
 Control::Motors motorControl;
 
@@ -17,10 +17,10 @@ WebSocketsClient webSocketClient;
 
 constexpr delay_ms delaySecond{1000};
 
-constexpr delay_ms tofSensorInterval{32};
-constexpr delay_ms httpRequestInterval{delaySecond};
+constexpr delay_ms tofSensorSendInterval{32};
+constexpr delay_ms environmentDataSendInterval{delaySecond};
 
-static_assert(tofSensorInterval <= httpRequestInterval, "ToF getting interval better be smaller!");
+static_assert(tofSensorSendInterval <= environmentDataSendInterval, "ToF getting interval better be smaller!");
 
 void setup()
 {
@@ -54,15 +54,27 @@ void setup()
                           { WS::onEventCallback(type, payload, length, motorCtrl); });
 }
 
+uint32_t callCounter{0};
 void loop()
 {
   webSocketClient.loop();
 
-  if (tofImage.pollData() && webSocketClient.isConnected())
+  if (webSocketClient.isConnected())
   {
-    const auto distanceData = tofImage.getDistanceData();
-    webSocketClient.sendBIN(reinterpret_cast<const uint8_t *>(distanceData.data()), distanceData.size_bytes());
+    if (tofImage.pollData())
+    {
+      const auto tofPacketData = WS::makeTofDataPacket(tofImage.getDistanceData());
+      webSocketClient.sendBIN(reinterpret_cast<const uint8_t *>(tofPacketData.data()), tofPacketData.size_bytes());
+    }
+
+    if (environmentDataSendInterval / tofSensorSendInterval <= callCounter++)
+    {
+      const auto envPacketData = WS::makeEnvironmentDataPacket(Environment::readData());
+      webSocketClient.sendBIN(reinterpret_cast<const uint8_t *>(envPacketData.data()), envPacketData.size_bytes());
+
+      callCounter = 0;
+    }
   }
 
-  delay(tofSensorInterval);
+  delay(tofSensorSendInterval);
 }

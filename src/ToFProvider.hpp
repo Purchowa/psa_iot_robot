@@ -6,13 +6,16 @@
 
 namespace ToF
 {
+  using DistanceDataType = int16_t;
+  constexpr uint8_t g_resolution{64};
+
   class ImageProvider
   {
     public:
       void init();
       bool pollData();
 
-      tcb::span<const int16_t> getDistanceData();
+      tcb::span<const DistanceDataType> getDistanceData() const;
       std::string serializeDistanceData();
 
     private:

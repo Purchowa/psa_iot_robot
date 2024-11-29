@@ -8,9 +8,9 @@ namespace Control
     enum class Direction : uint8_t
     {
         Left,     // a
-        Backward, // s
-        Forward,  // w
         Right,    // d
+        Forward,  // w
+        Backward, // s
         Stop
     };
 

@@ -14,7 +14,6 @@ namespace ToF
     constexpr int tof_SCL_pin{7};
     constexpr uint32_t tof_I2C_freq{400'000}; // 400kHz
 
-    constexpr uint8_t tof_resolution{64};
     constexpr uint8_t tof_sampling_freq{15};
   }
 
@@ -28,7 +27,7 @@ namespace ToF
     bool isImagerOk{true};
 
     isImagerOk &= m_imager.begin();
-    isImagerOk &= m_imager.setResolution(tof_resolution);
+    isImagerOk &= m_imager.setResolution(g_resolution);
     isImagerOk &= m_imager.setRangingFrequency(tof_sampling_freq);
     isImagerOk &= m_imager.startRanging();
 
@@ -48,7 +47,7 @@ namespace ToF
     return false;
   }
 
-  tcb::span<const int16_t> ImageProvider::getDistanceData()
+  tcb::span<const DistanceDataType> ImageProvider::getDistanceData() const
   {
     return m_measurementData.distance_mm;
   }
