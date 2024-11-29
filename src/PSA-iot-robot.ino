@@ -5,12 +5,14 @@
 #include "EnvironmentSensorsAPI.hpp"
 #include "EnvironmentSensorsReader.hpp"
 #include "ToFProvider.hpp"
-#include "ToFSocketAPI.hpp"
+#include "WebSocketReceiver.hpp"
 
 using delay_ms = uint32_t;
 
 Environment::SensorsAPI sensorsApi{Cfg::Api::thingspeakUrl};
 ToF::ImageProvider tofImage;
+Control::Motors motorControl;
+
 WebSocketsClient webSocketClient;
 
 constexpr delay_ms delaySecond{1000};
@@ -45,26 +47,21 @@ void setup()
       ;
   }
 
-  webSocketClient.beginSSL(Cfg::Api::webSocketHostName, Cfg::Api::webSocketPort, Cfg::Api::webSocketUrl);
-  webSocketClient.onEvent(onEventCallback);
-}
+  motorControl.init();
 
-uint32_t callCounter{0};
+  webSocketClient.beginSSL(Cfg::Api::webSocketHostName, Cfg::Api::webSocketPort, Cfg::Api::webSocketUrl);
+  webSocketClient.onEvent([&motorCtrl = motorControl](WStype_t type, uint8_t *payload, size_t length)
+                          { WS::onEventCallback(type, payload, length, motorCtrl); });
+}
 
 void loop()
 {
   webSocketClient.loop();
 
-  if (httpRequestInterval / tofSensorInterval <= callCounter++)
+  if (tofImage.pollData() && webSocketClient.isConnected())
   {
-    const auto httpCode = sensorsApi.postData(Environment::readData());
-    Serial.printf("[HTTPS] Post sensor data, code: %d\n", httpCode);
-    callCounter = 0;
-  }
-
-  if (tofImage.pollData())
-  {
-    webSocketClient.sendTXT(tofImage.serializeDistanceData().c_str());
+    const auto distanceData = tofImage.getDistanceData();
+    webSocketClient.sendBIN(reinterpret_cast<const uint8_t *>(distanceData.data()), distanceData.size_bytes());
   }
 
   delay(tofSensorInterval);
